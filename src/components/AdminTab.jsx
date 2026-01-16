@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import PasswordModal from './PasswordModal'
-import { exportToCSV } from '../utils/export'
+import { exportToGoogleSheets } from '../utils/googleSheets'
 
 const AdminTab = () => {
   const [authenticated, setAuthenticated] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [athletes, setAthletes] = useState([])
   const [loading, setLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -51,14 +52,33 @@ const AdminTab = () => {
     }
   }
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (athletes.length === 0) {
       setError('ไม่มีข้อมูลให้ส่งออก')
       return
     }
-    exportToCSV(athletes, 'นักกีฬาบาสเกตบอล.csv')
-    setSuccess('ส่งออกข้อมูลสำเร็จ')
-    setTimeout(() => setSuccess(''), 3000)
+
+    setExporting(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const result = await exportToGoogleSheets(athletes)
+      
+      if (result.success) {
+        setSuccess(result.message)
+        setTimeout(() => setSuccess(''), 5000)
+      } else {
+        setError(result.message)
+        setTimeout(() => setError(''), 5000)
+      }
+    } catch (err) {
+      console.error('Export error:', err)
+      setError('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + (err.message || 'เกิดข้อผิดพลาด'))
+      setTimeout(() => setError(''), 5000)
+    } finally {
+      setExporting(false)
+    }
   }
 
   const getStatusLabel = (status) => {
@@ -89,10 +109,10 @@ const AdminTab = () => {
           <h2 className="text-2xl font-bold text-gray-800">ข้อมูลนักกีฬาทั้งหมด</h2>
           <button
             onClick={handleExport}
-            disabled={loading || athletes.length === 0}
+            disabled={loading || exporting || athletes.length === 0}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ส่งออกข้อมูลทั้งหมด
+            {exporting ? 'กำลังส่งข้อมูล...' : 'ส่งออกไปยัง Google Sheets'}
           </button>
         </div>
 
@@ -146,10 +166,17 @@ const AdminTab = () => {
                   
                   {/* Line 3: Year of Study + Curriculum */}
                   {(athlete.year_of_study || athlete.curriculum) && (
-                    <div className="text-sm text-gray-600 mb-2">
+                    <div className="text-sm text-gray-600 mb-1">
                       {athlete.year_of_study && <span>{athlete.year_of_study}</span>}
                       {athlete.year_of_study && athlete.curriculum && <span> </span>}
                       {athlete.curriculum && <span>{athlete.curriculum}</span>}
+                    </div>
+                  )}
+                  
+                  {/* Line 4: Phone Number (Admin Only) */}
+                  {athlete.phone_number && (
+                    <div className="text-sm text-gray-600 mb-2">
+                      <span className="font-medium">เบอร์โทร:</span> {athlete.phone_number}
                     </div>
                   )}
                   
