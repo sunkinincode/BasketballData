@@ -128,13 +128,10 @@ cp .env.example .env
 ```
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_GOOGLE_SHEETS_API_URL=http://localhost:3000/api/google-sheets
 ```
 
 คุณสามารถหา URL และ Anon Key ได้จาก:
 - Supabase Dashboard → Settings → API
-
-**หมายเหตุ**: สำหรับ Google Sheets API URL ให้ตั้งค่าเป็น endpoint ของ backend API ที่คุณสร้างขึ้น (ดูคำแนะนำด้านล่าง)
 
 ### 4. รันแอปพลิเคชัน
 
@@ -144,98 +141,12 @@ npm run dev
 
 แอปพลิเคชันจะรันที่ `http://localhost:5173`
 
-### 5. ตั้งค่า Google Sheets API (สำหรับฟีเจอร์ Export)
-
-แอปพลิเคชันรองรับการส่งข้อมูลไปยัง Google Sheets โดยตรง ต้องตั้งค่าดังนี้:
-
-#### วิธีที่ 1: ใช้ Backend API (แนะนำ)
-
-สร้าง backend API endpoint ที่จัดการ Google Sheets API authentication:
-
-**ตัวอย่าง Backend Endpoint (Node.js/Express):**
-
-```javascript
-// backend/api/google-sheets.js
-const { google } = require('googleapis');
-
-const GOOGLE_SHEET_ID = '1PT5o8oBy0XIrKxkYEFz-_vKi8CV4o2b1pi4FrfeFxZg';
-
-async function exportToGoogleSheets(req, res) {
-  try {
-    const { values } = req.body;
-    
-    // Authenticate with Google Sheets API
-    const auth = new google.auth.GoogleAuth({
-      keyFile: 'path/to/service-account-key.json', // หรือใช้ environment variables
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
-    
-    const sheets = google.sheets({ version: 'v4', auth });
-    
-    // Append data to sheet
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: GOOGLE_SHEET_ID,
-      range: 'Sheet1!A:C',
-      valueInputOption: 'USER_ENTERED',
-      resource: { values },
-    });
-    
-    res.json({ success: true, message: 'ส่งข้อมูลสำเร็จ' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-}
-```
-
-**ตั้งค่า Google Service Account:**
-
-1. ไปที่ [Google Cloud Console](https://console.cloud.google.com/)
-2. สร้างโปรเจกต์ใหม่หรือเลือกโปรเจกต์ที่มีอยู่
-3. เปิดใช้งาน Google Sheets API
-4. สร้าง Service Account และดาวน์โหลด JSON key file
-5. แชร์ Google Sheet กับ Service Account email (ให้สิทธิ์ Editor)
-6. ตั้งค่า `VITE_GOOGLE_SHEETS_API_URL` ใน `.env` ให้ชี้ไปที่ backend API endpoint
-
-#### วิธีที่ 2: ใช้ Supabase Edge Functions
-
-สร้าง Supabase Edge Function เพื่อจัดการ Google Sheets API:
-
-```typescript
-// supabase/functions/google-sheets-export/index.ts
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { GoogleAuth } from 'https://deno.land/x/google_auth@v1.0.2/mod.ts'
-
-serve(async (req) => {
-  const { values } = await req.json()
-  
-  // Use service account credentials from environment
-  const auth = new GoogleAuth({
-    credentials: JSON.parse(Deno.env.get('GOOGLE_SERVICE_ACCOUNT') || '{}'),
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  })
-  
-  // Make API call to append data
-  // ... implementation
-  
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { 'Content-Type': 'application/json' },
-  })
-})
-```
-
-**Google Sheet ID:** `1PT5o8oBy0XIrKxkYEFz-_vKi8CV4o2b1pi4FrfeFxZg`
-
-**Column Mapping:**
-- Column A: `student_id` (รหัสนักศึกษา)
-- Column B: `name` (ชื่อ-นามสกุล)
-- Column C: `phone_number` (เบอร์โทร)
-
 ## การใช้งาน
 
 ### แท็บผู้ดูแลระบบ
 - รหัสผ่าน: `adminbas_`
 - ดูข้อมูลนักกีฬาทั้งหมดในรูปแบบตาราง
-- ส่งออกข้อมูลไปยัง Google Sheets (Column A: รหัสนักศึกษา, Column B: ชื่อ, Column C: เบอร์โทร)
+- ส่งออกข้อมูลเป็นไฟล์ CSV
 
 ### แท็บโค้ช
 - รหัสผ่าน: `coachbas_`

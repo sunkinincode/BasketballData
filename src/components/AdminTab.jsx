@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import PasswordModal from './PasswordModal'
-import { exportToGoogleSheets } from '../utils/googleSheets'
+import { exportToCSV } from '../utils/export'
 
 const AdminTab = () => {
   const [authenticated, setAuthenticated] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [athletes, setAthletes] = useState([])
   const [loading, setLoading] = useState(false)
-  const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -52,33 +51,30 @@ const AdminTab = () => {
     }
   }
 
-  const handleExport = async () => {
+  const hasAthletesWithStatus = () => {
+    return athletes.some(athlete => 
+      athlete.status && 
+      athlete.status.trim() !== '' && 
+      ['Starter', 'Substitute', 'Not Selected'].includes(athlete.status)
+    )
+  }
+
+  const handleExport = () => {
     if (athletes.length === 0) {
       setError('ไม่มีข้อมูลให้ส่งออก')
+      setTimeout(() => setError(''), 3000)
       return
     }
 
-    setExporting(true)
-    setError('')
-    setSuccess('')
-
-    try {
-      const result = await exportToGoogleSheets(athletes)
-      
-      if (result.success) {
-        setSuccess(result.message)
-        setTimeout(() => setSuccess(''), 5000)
-      } else {
-        setError(result.message)
-        setTimeout(() => setError(''), 5000)
-      }
-    } catch (err) {
-      console.error('Export error:', err)
-      setError('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + (err.message || 'เกิดข้อผิดพลาด'))
+    if (!hasAthletesWithStatus()) {
+      setError('ไม่สามารถส่งออกข้อมูลได้ เนื่องจากยังไม่มีนักกีฬาคนใดถูกระบุสถานะ กรุณาระบุสถานะให้กับนักกีฬาอย่างน้อย 1 คน')
       setTimeout(() => setError(''), 5000)
-    } finally {
-      setExporting(false)
+      return
     }
+
+    exportToCSV(athletes, 'นักกีฬาบาสเกตบอล.csv')
+    setSuccess('ส่งออกข้อมูลสำเร็จ')
+    setTimeout(() => setSuccess(''), 3000)
   }
 
   const getStatusLabel = (status) => {
@@ -109,10 +105,11 @@ const AdminTab = () => {
           <h2 className="text-2xl font-bold text-gray-800">ข้อมูลนักกีฬาทั้งหมด</h2>
           <button
             onClick={handleExport}
-            disabled={loading || exporting || athletes.length === 0}
+            disabled={loading || athletes.length === 0 || !hasAthletesWithStatus()}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            title={!hasAthletesWithStatus() && athletes.length > 0 ? 'กรุณาระบุสถานะให้กับนักกีฬาอย่างน้อย 1 คน' : ''}
           >
-            {exporting ? 'กำลังส่งข้อมูล...' : 'ส่งออกไปยัง Google Sheets'}
+            ส่งออกข้อมูลทั้งหมด
           </button>
         </div>
 
