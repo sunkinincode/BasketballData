@@ -18,10 +18,13 @@ const AthleteTab = () => {
     if (searchQuery.trim() === '') {
       setFilteredAthletes(athletes)
     } else {
-      // Since we only have Basketball, search by name instead
-      const filtered = athletes.filter(athlete =>
-        athlete.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      const query = searchQuery.toLowerCase().trim()
+      const filtered = athletes.filter(athlete => {
+        const nameMatch = athlete.name?.toLowerCase().includes(query) || false
+        const nicknameMatch = athlete.nickname?.toLowerCase().includes(query) || false
+        const studentIdMatch = athlete.student_id?.toLowerCase().includes(query) || false
+        return nameMatch || nicknameMatch || studentIdMatch
+      })
       setFilteredAthletes(filtered)
     }
   }, [searchQuery, athletes])
@@ -78,7 +81,7 @@ const AthleteTab = () => {
         <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="ค้นหานักกีฬา"
+          placeholder="ค้นหาตามชื่อ, ชื่อเล่น, หรือรหัสนักศึกษา"
         />
 
         {error && (

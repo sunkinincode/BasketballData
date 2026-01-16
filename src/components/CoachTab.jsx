@@ -37,9 +37,13 @@ const CoachTab = () => {
     if (searchQuery.trim() === '') {
       setFilteredAthletes(athletes)
     } else {
-      const filtered = athletes.filter(athlete =>
-        athlete.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      const query = searchQuery.toLowerCase().trim()
+      const filtered = athletes.filter(athlete => {
+        const nameMatch = athlete.name?.toLowerCase().includes(query) || false
+        const nicknameMatch = athlete.nickname?.toLowerCase().includes(query) || false
+        const studentIdMatch = athlete.student_id?.toLowerCase().includes(query) || false
+        return nameMatch || nicknameMatch || studentIdMatch
+      })
       setFilteredAthletes(filtered)
     }
   }, [searchQuery, athletes])
@@ -132,7 +136,7 @@ const CoachTab = () => {
         <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="ค้นหานักกีฬา"
+          placeholder="ค้นหาตามชื่อ, ชื่อเล่น, หรือรหัสนักศึกษา"
         />
 
         {error && (
