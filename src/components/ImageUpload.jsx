@@ -10,14 +10,20 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png']
-    if (!validTypes.includes(file.type)) {
-      setError('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น (jpg, png, jpeg)')
+    // --- จุดที่แก้ไข 1: ตรวจสอบนามสกุลไฟล์ (Extension) โดยตรง เพื่อรองรับ HEIC ได้แม่นยำกว่า ---
+    const fileName = file.name.toLowerCase()
+    const validExtensions = ['jpg', 'jpeg', 'png', 'heic']
+    const fileExtension = fileName.split('.').pop()
+
+    if (!validExtensions.includes(fileExtension)) {
+      // แจ้งเตือนทันทีตามที่ขอ
+      setError(`ไม่รับนามสกุลไฟล์ .${fileExtension} (รองรับเฉพาะ JPG, PNG, HEIC)`)
+      // ถ้าอยากให้เด้งเป็น Popup ให้ uncomment บรรทัดล่าง
+      // alert('ไม่รับนามสกุลไฟล์ดังกล่าว') 
       return
     }
 
-    // Validate file size (10MB = 10 * 1024 * 1024 bytes)
+    // Validate file size (10MB)
     const maxSize = 10 * 1024 * 1024
     if (file.size > maxSize) {
       setError('ขนาดไฟล์ต้องไม่เกิน 10 MB')
@@ -30,15 +36,17 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
 
     try {
       // Upload to Supabase Storage
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${athleteId}-${Date.now()}.${fileExt}`
-      const filePath = `athlete-images/${fileName}`
+      // ใช้ fileExtension ที่เราดึงมาแล้วด้านบน
+      const storageFileName = `${athleteId}-${Date.now()}.${fileExtension}`
+      const filePath = `athlete-images/${storageFileName}`
 
+      // เพิ่ม option contentType เพื่อให้ Supabase รู้ว่าเป็นไฟล์ประเภทไหน (สำคัญสำหรับ HEIC)
       const { error: uploadError } = await supabase.storage
         .from('athlete-images')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: file.type || `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`
         })
 
       if (uploadError) throw uploadError
@@ -88,7 +96,8 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
       <label className="cursor-pointer">
         <input
           type="file"
-          accept="image/jpeg,image/jpg,image/png"
+          // --- จุดที่แก้ไข 2: เพิ่ม .heic ใน accept attribute ---
+          accept=".jpg, .jpeg, .png, .heic, .HEIC, image/jpeg, image/png, image/heic"
           onChange={handleFileChange}
           disabled={uploading}
           className="hidden"
@@ -97,9 +106,13 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
           {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปภาพ'}
         </span>
       </label>
+      
       {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
+        <p className="mt-2 text-sm text-red-600 font-medium">
+           ⚠️ {error}
+        </p>
       )}
+      
       {success && (
         <p className="mt-2 text-sm text-green-600">อัปโหลดรูปภาพสำเร็จ</p>
       )}
