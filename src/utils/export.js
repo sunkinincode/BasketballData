@@ -16,20 +16,12 @@ export const exportToCSV = (data, filename = 'athletes.csv') => {
   }
 
   // Create CSV content
-  const csvHeaders = ['ชื่อ', 'ชื่อเล่น', 'รหัสนักศึกษา', 'ชั้นปี', 'หลักสูตร', 'เบอร์โทร', 'กีฬา', 'สถานะ', 'มีรูปภาพ']
+  const csvHeaders = ['รหัสนักศึกษา', 'ชื่อ - นามสกุล', 'เบอร์โทร']
   const csvRows = data.map(row => {
-    const status = statusMap[row.status] || row.status || 'ยังไม่ระบุ'
-    const hasImage = row.image_url ? 'ใช่' : 'ไม่'
     return [
-      `"${row.name || ''}"`,
-      `"${row.nickname || ''}"`,
       `"${row.student_id || ''}"`,
-      `"${row.year_of_study || ''}"`,
-      `"${row.curriculum || ''}"`,
+      `"${row.name || ''}"`,
       `"${row.phone_number || ''}"`,
-      `"${row.sport || 'บาสเกตบอล'}"`,
-      `"${status}"`,
-      `"${hasImage}"`
     ].join(',')
   })
 
