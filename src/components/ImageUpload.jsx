@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
   const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState(0) // 1. เพิ่ม State สำหรับ Progress
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
@@ -10,20 +11,17 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // --- จุดที่แก้ไข 1: ตรวจสอบนามสกุลไฟล์ (Extension) โดยตรง เพื่อรองรับ HEIC ได้แม่นยำกว่า ---
+    // Validate type (รองรับ HEIC)
     const fileName = file.name.toLowerCase()
     const validExtensions = ['jpg', 'jpeg', 'png', 'heic']
     const fileExtension = fileName.split('.').pop()
 
     if (!validExtensions.includes(fileExtension)) {
-      // แจ้งเตือนทันทีตามที่ขอ
       setError(`ไม่รับนามสกุลไฟล์ .${fileExtension} (รองรับเฉพาะ JPG, PNG, HEIC)`)
-      // ถ้าอยากให้เด้งเป็น Popup ให้ uncomment บรรทัดล่าง
-      // alert('ไม่รับนามสกุลไฟล์ดังกล่าว') 
       return
     }
 
-    // Validate file size (10MB)
+    // Validate size
     const maxSize = 10 * 1024 * 1024
     if (file.size > maxSize) {
       setError('ขนาดไฟล์ต้องไม่เกิน 10 MB')
@@ -33,14 +31,24 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
     setError('')
     setUploading(true)
     setSuccess(false)
+    setProgress(0) // รีเซ็ต Progress เป็น 0
+
+    // 2. สร้างตัวจำลอง Progress Bar (Simulated Progress)
+    // แถบจะค่อยๆ วิ่งไปเองเพื่อให้ User รู้ว่าระบบไม่ค้าง
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) {
+          // ถ้าถึง 90% แล้วยังอัปโหลดไม่เสร็จ ให้ค้างไว้ที่ 90
+          return 90 
+        }
+        return prev + 10 // เพิ่มทีละ 10%
+      })
+    }, 300) // อัปเดตทุกๆ 300ms
 
     try {
-      // Upload to Supabase Storage
-      // ใช้ fileExtension ที่เราดึงมาแล้วด้านบน
       const storageFileName = `${athleteId}-${Date.now()}.${fileExtension}`
       const filePath = `athlete-images/${storageFileName}`
 
-      // เพิ่ม option contentType เพื่อให้ Supabase รู้ว่าเป็นไฟล์ประเภทไหน (สำคัญสำหรับ HEIC)
       const { error: uploadError } = await supabase.storage
         .from('athlete-images')
         .upload(filePath, file, {
@@ -51,12 +59,14 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
 
       if (uploadError) throw uploadError
 
-      // Get public URL
+      // เมื่ออัปโหลดเสร็จจริง ให้พุ่งไป 100%
+      clearInterval(progressInterval)
+      setProgress(100)
+
       const { data: { publicUrl } } = supabase.storage
         .from('athlete-images')
         .getPublicUrl(filePath)
 
-      // Update athlete record
       const { error: updateError } = await supabase
         .from('athletes')
         .update({ image_url: publicUrl })
@@ -71,7 +81,9 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
     } catch (err) {
       console.error('Upload error:', err)
       setError(err.message || 'เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ')
+      setProgress(0) // ถ้า Error ให้รีเซ็ตหลอด
     } finally {
+      clearInterval(progressInterval) // เคลียร์ Interval เพื่อหยุดการทำงาน
       setUploading(false)
     }
   }
@@ -92,20 +104,35 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
   }
 
   return (
-    <div>
-      <label className="cursor-pointer">
+    <div className="w-full">
+      <label className="cursor-pointer block mb-2">
         <input
           type="file"
-          // --- จุดที่แก้ไข 2: เพิ่ม .heic ใน accept attribute ---
           accept=".jpg, .jpeg, .png, .heic, .HEIC, image/jpeg, image/png, image/heic"
           onChange={handleFileChange}
           disabled={uploading}
           className="hidden"
         />
-        <span className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-          {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปภาพ'}
+        <span className={`inline-block px-4 py-2 text-white rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed ${uploading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
+          {uploading ? 'กำลังประมวลผล...' : 'อัปโหลดรูปภาพ'}
         </span>
       </label>
+
+      {/* 3. ส่วนแสดงผล Progress Bar */}
+      {uploading && (
+        <div className="w-full max-w-xs mt-3">
+          <div className="flex justify-between mb-1">
+            <span className="text-sm font-medium text-blue-700">กำลังอัปโหลด</span>
+            <span className="text-sm font-medium text-blue-700">{progress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out" 
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
       
       {error && (
         <p className="mt-2 text-sm text-red-600 font-medium">
@@ -114,7 +141,7 @@ const ImageUpload = ({ athleteId, currentImageUrl, onUploadSuccess }) => {
       )}
       
       {success && (
-        <p className="mt-2 text-sm text-green-600">อัปโหลดรูปภาพสำเร็จ</p>
+        <p className="mt-2 text-sm text-green-600 font-medium">✅ อัปโหลดรูปภาพสำเร็จ</p>
       )}
     </div>
   )
