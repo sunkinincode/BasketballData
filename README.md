@@ -28,11 +28,25 @@ npm install
 
 ไปที่ SQL Editor ใน Supabase Dashboard และรันคำสั่ง SQL ต่อไปนี้:
 
+**หมายเหตุ**: หากคุณมีตาราง `athletes` อยู่แล้ว ให้รันคำสั่ง ALTER TABLE เพื่อเพิ่มคอลัมน์ใหม่:
+```sql
+-- เพิ่มคอลัมน์ใหม่ (ถ้ายังไม่มี)
+ALTER TABLE athletes 
+ADD COLUMN IF NOT EXISTS student_id TEXT,
+ADD COLUMN IF NOT EXISTS nickname TEXT,
+ADD COLUMN IF NOT EXISTS year_of_study TEXT,
+ADD COLUMN IF NOT EXISTS curriculum TEXT;
+```
+
 ```sql
 -- สร้างตาราง athletes
 CREATE TABLE athletes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
+  student_id TEXT,
+  nickname TEXT,
+  year_of_study TEXT,
+  curriculum TEXT,
   sport TEXT DEFAULT 'Basketball',
   status TEXT CHECK (status IN ('Starter', 'Substitute', 'Not Selected')),
   image_url TEXT,

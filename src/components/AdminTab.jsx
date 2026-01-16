@@ -117,45 +117,66 @@ const AdminTab = () => {
             <p className="text-gray-600">ไม่มีข้อมูลนักกีฬา</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ชื่อ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    สถานะ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    รูปภาพ
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {athletes.map((athlete) => (
-                  <tr key={athlete.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {athlete.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {getStatusLabel(athlete.status)}
+          <div className="space-y-4">
+            {athletes.map((athlete) => (
+              <div
+                key={athlete.id}
+                className="flex items-center gap-4 border border-gray-200 rounded-lg p-4 hover:shadow-md transition bg-white"
+              >
+                {/* Left Side - Text Information */}
+                <div className="flex-1 min-w-0">
+                  {/* Line 1: Name with Nickname */}
+                  <div className="mb-2">
+                    <span className="text-lg font-semibold text-gray-800">
+                      {athlete.name}
+                    </span>
+                    {athlete.nickname && (
+                      <span className="ml-2 font-bold text-gray-900">
+                        ({athlete.nickname})
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {athlete.image_url ? (
-                        <span className="text-green-600">✓ มีรูปภาพ</span>
-                      ) : (
-                        <span className="text-gray-400">ไม่มีรูปภาพ</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    )}
+                  </div>
+                  
+                  {/* Line 2: Student ID */}
+                  {athlete.student_id && (
+                    <div className="text-sm text-gray-600 mb-1">
+                      {athlete.student_id}
+                    </div>
+                  )}
+                  
+                  {/* Line 3: Year of Study + Curriculum */}
+                  {(athlete.year_of_study || athlete.curriculum) && (
+                    <div className="text-sm text-gray-600 mb-2">
+                      {athlete.year_of_study && <span>{athlete.year_of_study}</span>}
+                      {athlete.year_of_study && athlete.curriculum && <span> </span>}
+                      {athlete.curriculum && <span>{athlete.curriculum}</span>}
+                    </div>
+                  )}
+                  
+                  {/* Status Badge */}
+                  <div className="mt-2">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {getStatusLabel(athlete.status)}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Right Side - Image */}
+                <div className="flex-shrink-0">
+                  {athlete.image_url ? (
+                    <img
+                      src={athlete.image_url}
+                      alt={athlete.name}
+                      className="w-24 h-24 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-400 text-3xl">👤</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

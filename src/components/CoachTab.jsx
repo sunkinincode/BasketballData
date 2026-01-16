@@ -162,13 +162,40 @@ const CoachTab = () => {
             {filteredAthletes.map((athlete) => (
               <div
                 key={athlete.id}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition bg-white"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      {athlete.name}
-                    </h3>
+                <div className="flex items-start gap-4">
+                  {/* Left Side - Text Information */}
+                  <div className="flex-1 min-w-0">
+                    {/* Line 1: Name with Nickname */}
+                    <div className="mb-2">
+                      <span className="text-lg font-semibold text-gray-800">
+                        {athlete.name}
+                      </span>
+                      {athlete.nickname && (
+                        <span className="ml-2 font-bold text-gray-900">
+                          ({athlete.nickname})
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Line 2: Student ID */}
+                    {athlete.student_id && (
+                      <div className="text-sm text-gray-600 mb-1">
+                        {athlete.student_id}
+                      </div>
+                    )}
+                    
+                    {/* Line 3: Year of Study + Curriculum */}
+                    {(athlete.year_of_study || athlete.curriculum) && (
+                      <div className="text-sm text-gray-600 mb-3">
+                        {athlete.year_of_study && <span>{athlete.year_of_study}</span>}
+                        {athlete.year_of_study && athlete.curriculum && <span> </span>}
+                        {athlete.curriculum && <span>{athlete.curriculum}</span>}
+                      </div>
+                    )}
+                    
+                    {/* Status Radio Buttons */}
                     <div className="space-y-2">
                       {statusOptions.map((option) => (
                         <label
@@ -195,6 +222,21 @@ const CoachTab = () => {
                         </label>
                       ))}
                     </div>
+                  </div>
+                  
+                  {/* Right Side - Image */}
+                  <div className="flex-shrink-0">
+                    {athlete.image_url ? (
+                      <img
+                        src={athlete.image_url}
+                        alt={athlete.name}
+                        className="w-24 h-24 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-400 text-3xl">👤</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -98,37 +98,74 @@ const AthleteTab = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-4">
             {filteredAthletes.map((athlete) => (
               <div
                 key={athlete.id}
-                className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition"
+                className="flex items-center gap-4 border border-gray-200 rounded-lg p-4 hover:shadow-md transition bg-white"
               >
-                <div className="text-center mb-4">
+                {/* Left Side - Text Information */}
+                <div className="flex-1 min-w-0">
+                  {/* Line 1: Name with Nickname */}
+                  <div className="mb-2">
+                    <span className="text-lg font-semibold text-gray-800">
+                      {athlete.name}
+                    </span>
+                    {athlete.nickname && (
+                      <span className="ml-2 font-bold text-gray-900">
+                        ({athlete.nickname})
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Line 2: Student ID */}
+                  {athlete.student_id && (
+                    <div className="text-sm text-gray-600 mb-1">
+                      {athlete.student_id}
+                    </div>
+                  )}
+                  
+                  {/* Line 3: Year of Study + Curriculum */}
+                  {(athlete.year_of_study || athlete.curriculum) && (
+                    <div className="text-sm text-gray-600 mb-2">
+                      {athlete.year_of_study && <span>{athlete.year_of_study}</span>}
+                      {athlete.year_of_study && athlete.curriculum && <span> </span>}
+                      {athlete.curriculum && <span>{athlete.curriculum}</span>}
+                    </div>
+                  )}
+                  
+                  {/* Status Badge */}
+                  {athlete.status && (
+                    <div className="mb-3">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(athlete.status)}`}>
+                        {getStatusLabel(athlete.status)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Image Upload */}
+                  <div className="mt-3">
+                    <ImageUpload
+                      athleteId={athlete.id}
+                      currentImageUrl={athlete.image_url}
+                      onUploadSuccess={handleUploadSuccess}
+                    />
+                  </div>
+                </div>
+                
+                {/* Right Side - Image */}
+                <div className="flex-shrink-0">
                   {athlete.image_url ? (
                     <img
                       src={athlete.image_url}
                       alt={athlete.name}
-                      className="w-24 h-24 object-cover rounded-full mx-auto mb-3"
+                      className="w-24 h-24 object-cover rounded-lg"
                     />
                   ) : (
-                    <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-3 flex items-center justify-center">
-                      <span className="text-gray-400 text-2xl">👤</span>
+                    <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-400 text-3xl">👤</span>
                     </div>
                   )}
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                    {athlete.name}
-                  </h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(athlete.status)}`}>
-                    {getStatusLabel(athlete.status)}
-                  </span>
-                </div>
-                <div className="mt-4">
-                  <ImageUpload
-                    athleteId={athlete.id}
-                    currentImageUrl={athlete.image_url}
-                    onUploadSuccess={handleUploadSuccess}
-                  />
                 </div>
               </div>
             ))}
